@@ -4,6 +4,7 @@ import Html exposing (Html, Attribute, button, div, text, input)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import String exposing (..)
+import List exposing (..)
 import Char exposing (..)
 
 main =
@@ -22,18 +23,41 @@ update : Msg -> Model -> Model
 update msg model = 
     case msg of
         Translate ->
-            { model | content = model.content, output = getFirstAndLast (extractNumbers model).output }
+            { model | content = model.content, output = String.fromInt(fromListToString (List.map getFirstAndLast (extractNumbers (split " " model.content))))}
 
         Draft input -> 
             { model | content = input }
 
-extractNumbers : Model -> Model
-extractNumbers model =  
-    case (uncons model.content) of 
-        Just (x, xs) -> 
-            { model | output = numberOrString x ++ (extractNumbers {model | content = xs}).output}
+fromListToString : List String -> Int 
+fromListToString list = 
+    case (head list) of
+        Just x -> 
+            case toInt x of 
+                Just val -> 
+                    val + fromListToString (drop 1 list)
+                    
+                Nothing -> 
+                    0
+
         Nothing -> 
-            { model | output = "", content = "" }
+            0
+
+extractNumbers : List String -> List String
+extractNumbers str =  
+    case (head str) of 
+        Just x -> 
+            singleton (returnJustNumbers x) ++ (extractNumbers (drop 1 str))
+--            { model | output = numberOrString x ++ (extractNumbers {model | content = xs}).output}
+        Nothing -> 
+            []
+
+returnJustNumbers: String -> String
+returnJustNumbers str = case (uncons str) of
+    Just (x, xs) -> 
+        numberOrString x ++ returnJustNumbers xs
+    Nothing -> 
+        ""
+    
 
 view : Model -> Html Msg
 view model =
@@ -53,7 +77,7 @@ numberOrString x =
 getFirstAndLast : String -> String
 getFirstAndLast str =
     if String.length str == 1 then
-        repeat 2 str
+        String.repeat 2 str
     else if String.length str == 2 then
         str
     else if String.length str > 2 then
